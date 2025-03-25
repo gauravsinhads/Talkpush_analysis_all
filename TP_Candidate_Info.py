@@ -37,3 +37,23 @@ st.plotly_chart(fig1, use_container_width=True)
 top_campaigns = filtered_data['CAMPAIGNTITLE'].value_counts().nlargest(10)
 fig2 = px.bar(top_campaigns, x=top_campaigns.index, y=top_campaigns.values, title='Top 10 Campaign Titles', labels={'y': 'Counts'}, color_discrete_sequence=[colors[2]])
 st.plotly_chart(fig2, use_container_width=True)
+
+# Graph 3: Top 10 Source Counts
+top_sources = filtered_data['SOURCE'].value_counts().nlargest(10)
+fig3 = px.bar(top_sources, x=top_sources.index, y=top_sources.values, title='Top 10 Source Counts', labels={'y': 'Counts'}, color_discrete_sequence=[colors[3]])
+st.plotly_chart(fig3, use_container_width=True)
+
+# Graph 4: Top 10 Assigned Manager Counts
+top_managers = filtered_data['ASSIGNEDMANAGER'].value_counts().nlargest(10)
+fig4 = px.bar(top_managers, x=top_managers.index, y=top_managers.values, title='Top 10 Assigned Manager Counts', labels={'y': 'Counts'}, color_discrete_sequence=[colors[4]])
+st.plotly_chart(fig4, use_container_width=True)
+
+# Graph 5: Top 10 Folder Occurrences
+top_folders = filtered_data['FOLDER'].value_counts().nlargest(10)
+fig5 = px.bar(top_folders, x=top_folders.index, y=top_folders.values, title='Top 10 Folder Occurrences', labels={'y': 'Counts'}, color_discrete_sequence=[colors[5]])
+st.plotly_chart(fig5, use_container_width=True)
+
+# Graph 6: Top 5 Completion Methods
+top_completion_methods = filtered_data['COMPLETIONMETHOD'].value_counts().nlargest(5)
+fig6 = px.bar(top_completion_methods, x=top_completion_methods.index, y=top_completion_methods.values, title='Top 5 Completion Methods', labels={'y': 'Counts'}, color_discrete_sequence=[colors[6]])
+st.plotly_chart(fig6, use_container_width=True)
