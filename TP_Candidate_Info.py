@@ -30,10 +30,10 @@ else:
 
 # Graph 1: Lead Count Trend
 lead_trend = filtered_data.resample(date_freq, on='INVITATIONDT').count()
-fig1 = px.line(lead_trend, x=lead_trend.index, y='RECORDID', title='Lead Count Trend', color_discrete_sequence=[colors[0]])
+fig1 = px.line(lead_trend, x=lead_trend.index, y='RECORDID', title='Lead Count Trend', labels={'RECORDID': 'Counts'}, color_discrete_sequence=[colors[0]])
 st.plotly_chart(fig1, use_container_width=True)
 
 # Graph 2: Top 10 Campaign Titles
 top_campaigns = filtered_data['CAMPAIGNTITLE'].value_counts().nlargest(10)
-fig2 = px.bar(top_campaigns, x=top_campaigns.index, y=top_campaigns.values, title='Top 10 Campaign Titles', color_discrete_sequence=[colors[2]])
+fig2 = px.bar(top_campaigns, x=top_campaigns.index, y=top_campaigns.values, title='Top 10 Campaign Titles', labels={'y': 'Counts'}, color_discrete_sequence=[colors[2]])
 st.plotly_chart(fig2, use_container_width=True)
