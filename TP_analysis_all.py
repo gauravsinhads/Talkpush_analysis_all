@@ -1,4 +1,4 @@
-import streamlit as st
+limport streamlit as st
 import pandas as pd
 import plotly.express as px
 
@@ -69,7 +69,7 @@ for page in pages:
 #PAGE HOME_____________________________________________________________________________________________    
 # Page content
 if st.session_state.page == "Home":
-    st.title("HOME")
+    st.title("Overview data")
 
     # bar dropdown
     col = st.columns(3)
