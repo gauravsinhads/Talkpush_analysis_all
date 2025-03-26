@@ -197,6 +197,7 @@ elif st.session_state.page == "Page 1":
     top_completion_methods = filtered_data['COMPLETIONMETHOD'].value_counts().nlargest(5)
     fig6 = px.bar(top_completion_methods, x=top_completion_methods.index, y=top_completion_methods.values, title='Top 5 Completion Methods', labels={'y': 'Counts'}, color_discrete_sequence=[colors[6]])
     st.plotly_chart(fig6, use_container_width=True)
+#________________________________________________________________________________________________________________________________________    
 
 elif st.session_state.page == "page 2":
     st.title("page 2")
