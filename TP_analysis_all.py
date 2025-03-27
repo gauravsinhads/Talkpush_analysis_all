@@ -3,9 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 # Set page config
-st.set_page_config(page_title="Iqor Talkpush Dashboard", layout="wide" )
-
-
+st.set_page_config(page_title="iQor Talkpush Dashboard", layout="wide" )
 
 # Custom CSS for button styling
 st.markdown("""
@@ -73,7 +71,7 @@ if st.session_state.page == "Home":
 
     # bar dropdown
     col = st.columns(3)
-    with col[2]: aggregation_option = st.selectbox("Time Period", ["Last 30 days", "Last 12 Weeks", "Last 12 Months"])
+    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 30 days","Last 12 Weeks","Last 12 Months"])
     today = pd.Timestamp.today() # Get today's date
     # Load data
     @st.cache_data
@@ -99,21 +97,24 @@ if st.session_state.page == "Home":
 
     df_fil = df[df["TALKSCORE_OVERALL"] > 0]
 
-    # FIG1 and FIG1w Aggregate Data
+    # FIG1 Aggregate Data
     df_avg_overall = df_fil.groupby("DATE_GROUP", as_index=False)["TALKSCORE_OVERALL"].mean()
     df_avg_overall["TEXT_LABEL"] = df_avg_overall["TALKSCORE_OVERALL"].apply(lambda x: f"{x:.2f}")
+    # FIG2 count of leads
+    df_CountLeads = df.groupby(["DATE_GROUP"], as_index=False)["DATE_DAY"].count()
 
-     # FIG 1: Clustered Column (Talkscore Overall)
-    fig1 = px.line(df_avg_overall, 
-               x="DATE_GROUP", y ="TALKSCORE_OVERALL",      
-               markers=True,  # Add points (vertices)
-               title="Talkscore-Overall average", labels={"DATE_GROUP": "Time", "TALKSCORE_OVERALL": "Avg Talkscore"},
-               line_shape="linear", text="TEXT_LABEL")  # Use formatted text
-        # Update the trace to display the text on the chart
-    fig1.update_traces( textposition="top center", fill='tozeroy' , fillcolor="rgba(0, 0, 255, 0.2)")
+    # Create metrics columns
+    cols = st.columns(2)
+    with cols[0]:
+        st.subheader("Average Overall Talkscore")
+        st.area_chart(df_avg_overall.set_index("DATE_GROUP")["TALKSCORE_OVERALL"], 
+                 height=300, use_container_width=True)
+    with cols[1]:
+        st.subheader("Trend of Lead Counts")
+        st.bar_chart(df_CountLeads.set_index("DATE_GROUP")["DATE_DAY"],
+                 height=300, use_container_width=True)
 
     #FIG2 and FIG2w column stacked avg components
-            # Convert score columns to numeric
     score_columns = ["TALKSCORE_VOCAB", "TALKSCORE_FLUENCY", "TALKSCORE_GRAMMAR", "TALKSCORE_PRONUNCIATION"]
     df_fil[score_columns] = df_fil[score_columns].apply(pd.to_numeric, errors="coerce")
             # Group by DATE_GROUP and compute averages
@@ -121,7 +122,6 @@ if st.session_state.page == "Home":
             # Melt the DataFrame for Plotly
     df_avg_components = group_avg.melt(id_vars=["DATE_GROUP"],  value_vars=score_columns, var_name="Score Type",  value_name="Average Score")
     df_avg_components["TEXT_LABEL"] = df_avg_components["Average Score"].apply(lambda x: f"{x:.2f}")
-
         # FIG 2: Stacked Column (Component Breakdown)
     fig2 = px.line(df_avg_components, 
         x="DATE_GROUP",     y="Average Score", 
@@ -130,13 +130,60 @@ if st.session_state.page == "Home":
         line_shape="linear",  text="TEXT_LABEL" ) # Show values on points
      # Position text labels on the chart
     fig2.update_traces(textposition="top center")
-    
-    # Input widgets
-    col = st.columns(2)
+       
     # Display Charts
-    with col[0]:st.plotly_chart(fig1)
-    with col[1]:st.plotly_chart(fig2)
+    st.plotly_chart(fig2)
 
+    #FIG 3 Uncompleted and completed test
+        # Create calculated fields
+    test_summary = df.groupby(["DATE_GROUP", "CAMP_SITE"], as_index=False)["TEST_COMPLETED"].sum()
+
+    # FIG 3 Create Line Chart
+    fig3 =  px.bar(test_summary,
+        x="DATE_GROUP", y="TEST_COMPLETED", 
+        color="CAMP_SITE",  text="TEST_COMPLETED",
+        barmode="group",  title="Test Completion Status",
+        labels={"TEST_COMPLETED": "Total Tests Completed", "DATE_GROUP": "time", "CAMP_SITE": "Camp Site"}   )
+        # Format labels (rounded values)
+    fig3.update_traces(textposition="inside")
+    fig3.update_layout(xaxis_title="time", yaxis_title="Total Test Completed", bargap=0.2)
+    
+    # Display Charts
+    st.plotly_chart(fig3)
+
+    # FIG 4 Create calculated fields - calculate percentages
+    total_tests = df.groupby("DATE_GROUP", as_index=False)["TEST_COMPLETED"].count()
+    test_summary = test_summary.merge(total_tests, on="DATE_GROUP", suffixes=('', '_TOTAL'))
+    test_summary['PERCENTAGE_COMPLETED'] = (test_summary['TEST_COMPLETED'] / test_summary['TEST_COMPLETED_TOTAL']) * 100
+    # FIG 4 Create Line Chart
+    fig4 = px.line(test_summary,
+        x="DATE_GROUP", y="PERCENTAGE_COMPLETED", 
+        color="CAMP_SITE", 
+        markers=True,  # Add markers to each data point
+        title="Test Completion Status (%)",
+        labels={
+            "PERCENTAGE_COMPLETED": "Percentage of Tests Completed", 
+            "DATE_GROUP": "Time", 
+            "CAMP_SITE": "Camp Site"
+        })
+    # Format y-axis as percentage
+    fig4.update_layout(xaxis_title="Time", yaxis_title="Percentage of Tests Completed", yaxis_ticksuffix="%")
+    # Add data labels (percentage values)
+    fig4.update_traces(text=test_summary['PERCENTAGE_COMPLETED'].round(1),
+        textposition="top center")
+    # Display Charts
+    st.plotly_chart(fig4)
+
+    # FIG 5
+    df7_TSreviewM = df.groupby(["DATE_GROUP"], as_index=False)["FOR_TS_REVIEW"].sum()
+    #fig
+    fig5 = px.line(df7_TSreviewM,
+                x="DATE_GROUP", y="FOR_TS_REVIEW", title="For TS Review Monthly"
+                ,markers=True,labels={"DATE_GROUP": "Time", "FOR_TS_REVIEW": "For TS Review"}
+                ,line_shape="linear",text="FOR_TS_REVIEW")
+    fig5.update_traces(textposition="top center")
+    # Display Charts
+    st.plotly_chart(fig5)
 
 #PAGE 1_______________________________________________________________________________________________
 elif st.session_state.page == "Page 1":
@@ -211,4 +258,4 @@ elif st.session_state.page == "page 4":
     st.title("page 2")
     # Your content here
 
-# streamlit run TP_Candidate_Info.py
+# streamlit run TP_analysis_all.py
