@@ -55,7 +55,7 @@ st.sidebar.title("Pages")
 def set_page(page_name):
     st.session_state.page = page_name
 
-pages = ["Home", "Page 1", "Page 2", "Page 3", "Page 4"]
+pages = ["Home", "Page 1", "Page 2", "Page 3", "CEFR Dive"]
 
 for page in pages:
     st.sidebar.button(
@@ -282,7 +282,7 @@ elif st.session_state.page == "page 3":
     st.title("page 2")
     # Your content here
 
-elif st.session_state.page == "page 4":
+elif st.session_state.page == "CEFR Dive":
     st.title("page 2")
     # Your content here
 
