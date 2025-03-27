@@ -97,6 +97,18 @@ if st.session_state.page == "Home":
 
     df_fil = df[df["TALKSCORE_OVERALL"] > 0]
 
+    # Calculate metrics of scorecard
+    ts_overall = df_fil["TALKSCORE_OVERALL"].mean()
+    count_leads = df["DATE_DAY"].count()
+    #max_value = df["VALUE"].max()
+    #min_value = df["VALUE"].min()
+    Cols_b = st.columns(2)
+    with Cols_b[0]:
+        st.metric(label="Total Average Talkscore Overall", value=f"${ts_overall:,.0f}")
+
+    with Cols_b[1]:
+        st.metric(label="Total count of  leads", value=f"${count_leads:,.2f}")
+
     # FIG1 Aggregate Data
     df_avg_overall = df_fil.groupby("DATE_GROUP", as_index=False)["TALKSCORE_OVERALL"].mean()
     df_avg_overall["TEXT_LABEL"] = df_avg_overall["TALKSCORE_OVERALL"].apply(lambda x: f"{x:.2f}")
