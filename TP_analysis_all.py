@@ -100,14 +100,13 @@ if st.session_state.page == "Home":
     # Calculate metrics of scorecard
     ts_overall = df_fil["TALKSCORE_OVERALL"].mean()
     count_leads = df["DATE_DAY"].count()
-    #max_value = df["VALUE"].max()
-    #min_value = df["VALUE"].min()
+    
     Cols_b = st.columns(2)
     with Cols_b[0]:
-        st.metric(label="Total Average Talkscore Overall", value=f"${ts_overall:,.0f}")
+        st.metric(label="Total Average Talkscore Overall", value=f"{ts_overall:,.2f}")
 
     with Cols_b[1]:
-        st.metric(label="Total count of  leads", value=f"${count_leads:,.2f}")
+        st.metric(label="Total count of  leads", value=f"{count_leads:,.0f}")
 
     # FIG1 Aggregate Data
     df_avg_overall = df_fil.groupby("DATE_GROUP", as_index=False)["TALKSCORE_OVERALL"].mean()
@@ -118,14 +117,29 @@ if st.session_state.page == "Home":
     # Create metrics columns
     cols = st.columns(2)
     with cols[0]:
-        st.subheader("Average Overall Talkscore")
+        st.subheader("Average Talkscore Overall")
         st.area_chart(df_avg_overall.set_index("DATE_GROUP")["TALKSCORE_OVERALL"], 
                  height=300, use_container_width=True)
     with cols[1]:
         st.subheader("Trend of Lead Counts")
         st.bar_chart(df_CountLeads.set_index("DATE_GROUP")["DATE_DAY"],
                  height=300, use_container_width=True)
+    # Calculate metrics of scorecard 2  
+    ts_vocab = df_fil["TALKSCORE_VOCAB"].mean()
+    ts_fluency = df_fil["TALKSCORE_FLUENCY"].mean()
+    ts_Grammar = df_fil["TALKSCORE_GRAMMAR"].mean()
+    ts_pronun = df_fil["TALKSCORE_PRONUNCIATION"].mean()
 
+    Cols_c = st.columns(4)
+    with Cols_c[0]:
+        st.metric(label="Total Average Talkscore Vocabulary", value=f"{ts_vocab:,.2f}")
+    with Cols_c[1]:
+        st.metric(label="Total Average Talkscore Fluency", value=f"{ts_fluency:,.2f}")
+    with Cols_c[2]:
+        st.metric(label="Total Average Talkscore Grammar", value=f"{ts_Grammar:,.2f}")
+    with Cols_c[3]:
+        st.metric(label="Total Average Talkscore Pronunciation", value=f"{ts_pronun:,.2f}")
+                
     #FIG2 and FIG2w column stacked avg components
     score_columns = ["TALKSCORE_VOCAB", "TALKSCORE_FLUENCY", "TALKSCORE_GRAMMAR", "TALKSCORE_PRONUNCIATION"]
     df_fil[score_columns] = df_fil[score_columns].apply(pd.to_numeric, errors="coerce")
