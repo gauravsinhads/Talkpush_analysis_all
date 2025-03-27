@@ -71,7 +71,7 @@ if st.session_state.page == "Home":
 
     # bar dropdown
     col = st.columns(3)
-    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 30 days","Last 12 Weeks","Last 12 Months"])
+    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days"])
     today = pd.Timestamp.today() # Get today's date
     # Load data
     @st.cache_data
@@ -82,9 +82,9 @@ if st.session_state.page == "Home":
     
     # Apply Aggregation based on Selection
     if aggregation_option == "Last 12 Months":
-        df["DATE_GROUP"] = df["DATE_DAY"].dt.strftime("%b-%Y")  # Format as Feb-2024
+        df["DATE_GROUP"] = df["DATE_DAY"].dt.to_period('M').dt.to_timestamp()  # Format as Feb-2024
     elif  aggregation_option == "Last 12 Weeks":
-        df["DATE_GROUP"] = "W_" + (df["DATE_DAY"] + pd.to_timedelta(6 - df["DATE_DAY"].dt.weekday, unit="D")).dt.strftime("%b-%d")
+        df["DATE_GROUP"] = df["DATE_DAY"] + pd.to_timedelta(6 - df["DATE_DAY"].dt.weekday, unit="D")
     else:
         df["DATE_GROUP"] = pd.to_datetime(df["DATE_DAY"], format='%b-%d-%Y')
     # Apply Aggregation based on Selection2
@@ -196,8 +196,10 @@ elif st.session_state.page == "Page 1":
     colors = ["#001E44", "#F5F5F5", "#E53855", "#B4BBBE", "#2F76B9", "#3B9790", "#F5BA2E", "#6A4C93", "#F77F00"]
     
     # Sidebar dropdown
-    st.sidebar.header("Select Time Period")
-    time_filter = st.sidebar.selectbox("Time Period", ["Last 30 days", "Last 12 Weeks", "Last 1 Year", "All Time"])
+    col = st.columns(3)
+    with col[2]:
+        st.header("Select Time Period")
+        time_filter = st.selectbox("Time Period", ["Last 30 days", "Last 12 Weeks", "Last 1 Year", "All Time"])
     
     # Filter data based on selection
     max_date = tpci['INVITATIONDT'].max()
