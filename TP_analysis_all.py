@@ -226,6 +226,7 @@ if st.session_state.page == "Home":
 #PAGE 1_______________________________________________________________________________________________
 elif st.session_state.page == "Candidate Info":
 
+    st.title("Candidate Info")
     # Load data
     tpci = pd.read_csv("TalkpushCI_data_fetch.csv")
     tpci['INVITATIONDT'] = pd.to_datetime(tpci['INVITATIONDT'])
