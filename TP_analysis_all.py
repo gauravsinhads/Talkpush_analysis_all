@@ -20,8 +20,8 @@ st.markdown("""
         width: 80%;
         border-radius: 4px 4px 0 0;
         border: 1px solid #e0e0e0;
-        background-color: #f0f2f6;
-        color: black;
+        background-color: #E53855;
+        color: white;
         text-align: left;
         padding: 8px 12px;
         margin: 0;
@@ -29,8 +29,8 @@ st.markdown("""
     
     /* Selected button styling */
     div.stButton > button:focus {
-        background-color: white;
-        border-bottom: 2px solid #0d6efd;
+        background-color: #2F76B9;
+        border-bottom: 2px solid #2F76B9;
         font-weight: bold;
     }
     
@@ -79,7 +79,7 @@ if st.session_state.page == "Home":
     df = load_data()
     
     df["DATE_DAY"] = pd.to_datetime(df["DATE_DAY"])
-    
+    custom_colors = ["#2F76B9",	"#3B9790", "#F5BA2E", "#6A4C93", "#F77F00", "#B4BBBE","#e6657b", "#026df5","#5aede2"]
     # Apply Aggregation based on Selection
     if aggregation_option == "Last 12 Months":
         df["DATE_GROUP"] = df["DATE_DAY"].dt.to_period('M').dt.to_timestamp()  # Format as Feb-2024
@@ -104,7 +104,6 @@ if st.session_state.page == "Home":
     Cols_b = st.columns(2)
     with Cols_b[0]:
         st.metric(label="Total Average Talkscore Overall", value=f"{ts_overall:,.2f}")
-
     with Cols_b[1]:
         st.metric(label="Total count of  leads", value=f"{count_leads:,.0f}")
 
@@ -118,12 +117,13 @@ if st.session_state.page == "Home":
     cols = st.columns(2)
     with cols[0]:
         st.subheader("Average Talkscore Overall")
-        st.area_chart(df_avg_overall.set_index("DATE_GROUP")["TALKSCORE_OVERALL"], 
-                 height=300, use_container_width=True)
+        st.line_chart(df_avg_overall.set_index("DATE_GROUP")["TALKSCORE_OVERALL"], 
+                 height=300, use_container_width=True,color= '#3B9790' )
     with cols[1]:
         st.subheader("Trend of Lead Counts")
-        st.bar_chart(df_CountLeads.set_index("DATE_GROUP")["DATE_DAY"],
-                 height=300, use_container_width=True)
+        st.area_chart(df_CountLeads.set_index("DATE_GROUP")["DATE_DAY"],
+                 height=300, use_container_width=True, color= '#3B9790')
+        
     # Calculate metrics of scorecard 2  
     ts_vocab = df_fil["TALKSCORE_VOCAB"].mean()
     ts_fluency = df_fil["TALKSCORE_FLUENCY"].mean()
@@ -139,7 +139,7 @@ if st.session_state.page == "Home":
         st.metric(label="Total Average Talkscore Grammar", value=f"{ts_Grammar:,.2f}")
     with Cols_c[3]:
         st.metric(label="Total Average Talkscore Pronunciation", value=f"{ts_pronun:,.2f}")
-                
+
     #FIG2 and FIG2w column stacked avg components
     score_columns = ["TALKSCORE_VOCAB", "TALKSCORE_FLUENCY", "TALKSCORE_GRAMMAR", "TALKSCORE_PRONUNCIATION"]
     df_fil[score_columns] = df_fil[score_columns].apply(pd.to_numeric, errors="coerce")
@@ -169,7 +169,8 @@ if st.session_state.page == "Home":
         x="DATE_GROUP", y="TEST_COMPLETED", 
         color="CAMP_SITE",  text="TEST_COMPLETED",
         barmode="group",  title="Test Completion Status",
-        labels={"TEST_COMPLETED": "Total Tests Completed", "DATE_GROUP": "time", "CAMP_SITE": "Camp Site"}   )
+        labels={"TEST_COMPLETED": "Total Tests Completed", "DATE_GROUP": "time", "CAMP_SITE": "Camp Site"} ,
+        color_discrete_sequence=custom_colors    )
         # Format labels (rounded values)
     fig3.update_traces(textposition="inside")
     fig3.update_layout(xaxis_title="time", yaxis_title="Total Test Completed", bargap=0.2)
@@ -187,11 +188,9 @@ if st.session_state.page == "Home":
         color="CAMP_SITE", 
         markers=True,  # Add markers to each data point
         title="Test Completion Status (%)",
-        labels={
-            "PERCENTAGE_COMPLETED": "Percentage of Tests Completed", 
-            "DATE_GROUP": "Time", 
-            "CAMP_SITE": "Camp Site"
-        })
+        labels={"PERCENTAGE_COMPLETED": "Percentage of Tests Completed", "DATE_GROUP": "Time", 
+            "CAMP_SITE": "Camp Site"},
+            color_discrete_sequence=custom_colors)
     # Format y-axis as percentage
     fig4.update_layout(xaxis_title="Time", yaxis_title="Percentage of Tests Completed", yaxis_ticksuffix="%")
     # Add data labels (percentage values)
@@ -201,15 +200,29 @@ if st.session_state.page == "Home":
     st.plotly_chart(fig4)
 
     # FIG 5
-    df7_TSreviewM = df.groupby(["DATE_GROUP"], as_index=False)["FOR_TS_REVIEW"].sum()
+    df5_TSreviewM = df.groupby(["DATE_GROUP"], as_index=False)["FOR_TS_REVIEW"].sum()
     #fig
-    fig5 = px.line(df7_TSreviewM,
+    fig5 = px.line(df5_TSreviewM,
                 x="DATE_GROUP", y="FOR_TS_REVIEW", title="For TS Review Monthly"
                 ,markers=True,labels={"DATE_GROUP": "Time", "FOR_TS_REVIEW": "For TS Review"}
                 ,line_shape="linear",text="FOR_TS_REVIEW")
     fig5.update_traces(textposition="top center")
     # Display Charts
     st.plotly_chart(fig5)
+
+    #FIG 6
+    df6_counts = df.groupby(["DATE_GROUP", "NEW_SOURCE"]).size().reset_index(name="COUNT")
+    df6_counts["PERCENTAGE"] = df6_counts.groupby("DATE_GROUP")["COUNT"].transform(lambda x: x / x.sum() * 100)
+
+    fig6 = px.bar(df6_counts, 
+        x="DATE_GROUP", y="PERCENTAGE", 
+        color="NEW_SOURCE", text=df6_counts["PERCENTAGE"].apply(lambda x: f"{x:.1f}%"),
+        title="100% Stacked Column Chart",
+        labels={"PERCENTAGE": "Percentage", "DATE_GROUP": "time", "NEW_SOURCE": "Source"} ,
+         color_discrete_sequence=custom_colors )
+    fig6.update_layout(barmode="stack", yaxis=dict(tickformat=".0%"), height=500)
+    # Display Charts
+    st.plotly_chart(fig6)
 
 #PAGE 1_______________________________________________________________________________________________
 elif st.session_state.page == "Page 1":
@@ -297,7 +310,67 @@ elif st.session_state.page == "page 3":
     # Your content here
 
 elif st.session_state.page == "CEFR Dive":
-    st.title("page 2")
+    st.title("CEFR Dive")
     # Your content here
+    col = st.columns(3)
+    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days"])
+    today = pd.Timestamp.today() # Get today's date
+    # Load data
+    @st.cache_data
+    def load_data(): return pd.read_csv("TP_raw_data1.csv")
+    df = load_data()
+    
+    df["DATE_DAY"] = pd.to_datetime(df["DATE_DAY"])
+    
+    # Apply Aggregation based on Selection
+    if aggregation_option == "Last 12 Months":
+        df["DATE_GROUP"] = df["DATE_DAY"].dt.to_period('M').dt.to_timestamp()  # Format as Feb-2024
+    elif  aggregation_option == "Last 12 Weeks":
+        df["DATE_GROUP"] = df["DATE_DAY"] + pd.to_timedelta(6 - df["DATE_DAY"].dt.weekday, unit="D")
+    else:
+        df["DATE_GROUP"] = pd.to_datetime(df["DATE_DAY"], format='%b-%d-%Y')
+    # Apply Aggregation based on Selection2
+    if aggregation_option == "Last 30 days":
+        df = df[df["DATE_DAY"] >= today - pd.Timedelta(days=30)]
+    elif  aggregation_option == "Last 12 Weeks":
+        df = df[df["DATE_DAY"] >= today - pd.Timedelta(weeks=12)]
+    else:
+        df["DATE_GROUP2"] = pd.to_datetime(df["DATE_DAY"], format='%b-%d-%Y')
+
+    df_fil = df[df["TALKSCORE_OVERALL"] > 0]
+
+    # Calculate metrics of scorecard
+
+    #FIG calculate dataframe for CEFR
+    df_cefr_count = df_fil.groupby(["DATE_GROUP", "TALKSCORE_CEFR"]).size().reset_index(name="Count")
+        #FIG 1 TALKSCORE_CEFR over the time
+    custom_colors = ["#2F76B9",	"#3B9790", "#F5BA2E", "#6A4C93", "#F77F00", "#B4BBBE","#e6657b", "#026df5","#5aede2"]
+
+    CEFR_Monthly = px.bar(df_cefr_count, 
+        x="DATE_GROUP", y="Count", 
+        color="TALKSCORE_CEFR",  # Different colors for each CEFR level
+        barmode="stack", title="Distribution of TALKSCORE_CEFR Levels",
+        labels={"DATE_GROUP": "time", "Count": "Number of Candidates"},
+        text_auto=True,color_discrete_sequence=custom_colors ) # Show counts on bars
+    # display chart
+    st.plotly_chart(CEFR_Monthly, use_container_width=True)
+
+    # FIG 2 Group by TALKSCORE_CEFR and calculate min, max, and count
+    cefr_summary = df_fil.groupby(["DATE_GROUP", "TALKSCORE_CEFR"]).agg(
+        Min_=("TALKSCORE_OVERALL", "min"),
+        Max_=("TALKSCORE_OVERALL", "max"),
+        Count=("TALKSCORE_CEFR", "count")).reset_index()
+    # FIG 2 Pivot the table so that MONTHLY_ is the top-level column
+        #  MONTHLY_ is the top-level column and stats are below
+    cefr_summary_pivot = cefr_summary.pivot(index="TALKSCORE_CEFR", columns="DATE_GROUP", values=["Min_", "Max_", "Count"])
+    cefr_summary_pivot = cefr_summary_pivot.sort_index(axis=1, level=1)
+        # Rename columns: Convert dates back to string format (e.g., "Feb-25") and keep hierarchical structure
+    cefr_summary_pivot.columns = pd.MultiIndex.from_tuples([(col[0], col[1].strftime('%b-%y')) for col in cefr_summary_pivot.columns])
+        # Reset index to bring TALKSCORE_CEFR back as a column
+    cefr_summary_pivot.reset_index(inplace=True)
+    cefr_summary_pivot = cefr_summary_pivot.swaplevel(axis=1)
+    
+    st.subheader("Talkscore Overall Summary by CEFR (Min–Max)")
+    st.dataframe(cefr_summary_pivot)
 
 # streamlit run TP_analysis_all.py
