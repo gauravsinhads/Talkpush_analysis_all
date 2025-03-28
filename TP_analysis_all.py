@@ -384,7 +384,7 @@ elif st.session_state.page == "Failure Reasons":
     # 📌 Table 1 : Count of FAILED_REASON by TALKSCORE_CEFR
     pivot_count = df.pivot_table(index="FAILED_REASON", columns=["DATE_GROUP", "CEFR"], aggfunc="size", fill_value=0)
     # Sort columns by date
-    pivot_count = pivot_count.sort_index(axis=1, level=0)
+    pivot_count = pivot_count.sort_index(axis=1, level=1)
     # Format DATE_GROUP columns as 'MMM-YY'
     pivot_count.columns = pd.MultiIndex.from_tuples([(col[0].strftime('%b-%d-%Y'), col[1]) for col in pivot_count.columns])
     # Reset index for better readability
