@@ -55,7 +55,7 @@ st.sidebar.title("Pages")
 def set_page(page_name):
     st.session_state.page = page_name
 
-pages = ["Home", "Candidate Info", "Talkscore Analysis", "Page 3", "CEFR Dive"]
+pages = ["Home", "Candidate Info", "Talkscore Analysis", "Failure Reasons", "CEFR Dive"]
 
 for page in pages:
     st.sidebar.button(
@@ -350,15 +350,75 @@ elif st.session_state.page == "Talkscore Analysis":
         st.plotly_chart(fig2)
     else:
         st.write("Talkscore variables not available in the dataset.")
-        # Your content here
+        
+#____________________________________________________________________________________________________________________________________
 
-elif st.session_state.page == "page 3":
-    st.title("page 2")
-    # Your content here
+elif st.session_state.page == "Failure Reasons":
+    st.title("Failure Reasons")
 
+    col = st.columns(3)
+    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days"])
+    today = pd.Timestamp.today() # Get today's date
+    # Load data
+    @st.cache_data
+    def load_data(): return pd.read_csv("Failure_Reasons.csv")
+    df = load_data()
+    
+    df["DATE_DAY"] = pd.to_datetime(df["DATE_DAY"])
+    
+    # Apply Aggregation based on Selection
+    if aggregation_option == "Last 12 Months":
+        df["DATE_GROUP"] = df["DATE_DAY"].dt.to_period('M').dt.to_timestamp()  # Format as Feb-2024
+    elif  aggregation_option == "Last 12 Weeks":
+        df["DATE_GROUP"] = df["DATE_DAY"] + pd.to_timedelta(6 - df["DATE_DAY"].dt.weekday, unit="D")
+    else:
+        df["DATE_GROUP"] = pd.to_datetime(df["DATE_DAY"], format='%b-%d-%Y')
+    # Apply Aggregation based on Selection2
+    if aggregation_option == "Last 30 days":
+        df = df[df["DATE_DAY"] >= today - pd.Timedelta(days=30)]
+    elif  aggregation_option == "Last 12 Weeks":
+        df = df[df["DATE_DAY"] >= today - pd.Timedelta(weeks=12)]
+    else:
+        df["DATE_GROUP2"] = pd.to_datetime(df["DATE_DAY"], format='%b-%d-%Y')
+
+    # 📌 Table 1 : Count of FAILED_REASON by TALKSCORE_CEFR
+    pivot_count = df.pivot_table(index="FAILED_REASON", columns=["DATE_GROUP", "CEFR"], aggfunc="size", fill_value=0)
+    # Sort columns by date
+    pivot_count = pivot_count.sort_index(axis=1, level=0)
+    # Format DATE_GROUP columns as 'MMM-YY'
+    pivot_count.columns = pd.MultiIndex.from_tuples([(col[0].strftime('%b-%d-%Y'), col[1]) for col in pivot_count.columns])
+    # Reset index for better readability
+    pivot_count.reset_index(inplace=True)
+    #pivot_count = pivot_count.swaplevel(axis=1)
+        
+    #Show the table
+    st.subheader("Count of FAILED_REASON by TALKSCORE_CEFR")
+    st.dataframe(pivot_count, use_container_width=True)
+
+    # 📌 Table 2 : Average TALKSORES by FAILED_REASON
+    pivot_avg2  = df.groupby(["DATE_GROUP", "FAILED_REASON"])[["VOC", "FLU", "GRAM", "PRON", "OVERALL"]].mean().reset_index()
+    pivot_avg2["VOC"]  = pivot_avg2["VOC"].apply(lambda x: f"{x:.2f}")
+    pivot_avg2["FLU"]  = pivot_avg2["FLU"].apply(lambda x: f"{x:.2f}")
+    pivot_avg2["GRAM"] = pivot_avg2["GRAM"].apply(lambda x: f"{x:.2f}")
+    pivot_avg2["PRON"] = pivot_avg2["PRON"].apply(lambda x: f"{x:.2f}")
+    pivot_avg2["_OVERALL"] = pivot_avg2["OVERALL"].apply(lambda x: f"{x:.2f}")
+    ## Pivot Monthly Table
+    pvt_avg2 = pivot_avg2.pivot(index="FAILED_REASON", columns="DATE_GROUP", values=["VOC", "FLU", "GRAM", "PRON", "OVERALL"])
+    pvt_avg2 = pvt_avg2.sort_index(axis=1, level=1)
+    # Ensure DATE_GROUP is formatted correctly in column names
+    pvt_avg2.columns = pd.MultiIndex.from_tuples([(col[0], col[1].strftime('%b-%d-%Y')) for col in pvt_avg2.columns])
+    # Reset index and swap levels for better readability
+    pvt_avg2.reset_index(inplace=True)
+    pvt_avg2 = pvt_avg2.swaplevel(axis=1)
+    # Show the table
+    st.subheader("Average TALKSORES by FAILED_REASON")
+    st.dataframe(pvt_avg2, use_container_width=True)
+
+    
+#____________________________________________________________________________________________________________________________________
 elif st.session_state.page == "CEFR Dive":
     st.title("CEFR Dive")
-    # Your content here
+    
     col = st.columns(3)
     with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days"])
     today = pd.Timestamp.today() # Get today's date
@@ -412,8 +472,7 @@ elif st.session_state.page == "CEFR Dive":
     cefr_summary_pivot = cefr_summary.pivot(index="TALKSCORE_CEFR", columns="DATE_GROUP", values=["Min_", "Max_", "Count"])
     cefr_summary_pivot = cefr_summary_pivot.sort_index(axis=1, level=1)
         # Rename columns: Convert dates back to string format (e.g., "Feb-25") and keep hierarchical structure
-    cefr_summary_pivot.columns = pd.MultiIndex.from_tuples([(col[0], col[1].strftime('%b-%y')) for col in cefr_summary_pivot.columns])
-        # Reset index to bring TALKSCORE_CEFR back as a column
+    cefr_summary_pivot.columns = pd.MultiIndex.from_tuples([(col[0], col[1].strftime('%b-%d-%Y')) for col in cefr_summary_pivot.columns])
     cefr_summary_pivot.reset_index(inplace=True)
     cefr_summary_pivot = cefr_summary_pivot.swaplevel(axis=1)
     
