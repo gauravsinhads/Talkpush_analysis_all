@@ -388,7 +388,7 @@ elif st.session_state.page == "Failure Reasons":
     # Format DATE_GROUP columns as 'MMM-YY'
     pivot_count.columns = pd.MultiIndex.from_tuples([(col[0].strftime('%b-%d-%Y'), col[1]) for col in pivot_count.columns])
     # Reset index for better readability
-    pivot_count.columns = ['_'.join(map(str, col)) if isinstance(col, tuple) else str(col) for col in pivot_count.columns]
+    #pivot_count.columns = ['_'.join(map(str, col)) if isinstance(col, tuple) else str(col) for col in pivot_count.columns]
     pivot_count.reset_index(inplace=True)
     #pivot_count = pivot_count.swaplevel(axis=1)
        
