@@ -155,8 +155,7 @@ if st.session_state.page == "Home":
         markers=True, title="Talkscore Components Month over Month", labels={"DATE_GROUP": "Time", "Average Score": "Score"},
         line_shape="linear",  text="TEXT_LABEL" ) # Show values on points
      # Position text labels on the chart
-    fig2.update_traces(textposition="top center")
-       
+    fig2.update_traces(textposition="top center") 
     # Display Charts
     st.plotly_chart(fig2)
 
