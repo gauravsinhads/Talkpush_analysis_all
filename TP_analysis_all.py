@@ -390,7 +390,7 @@ elif st.session_state.page == "Failure Reasons":
     # Reset index for better readability
     pivot_count.reset_index(inplace=True)
     #pivot_count = pivot_count.swaplevel(axis=1)
-        
+       
     #Show the table
     st.subheader("Count of FAILED_REASON by TALKSCORE_CEFR")
     st.dataframe(pivot_count, use_container_width=True)
