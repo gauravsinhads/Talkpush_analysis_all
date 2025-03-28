@@ -30,7 +30,7 @@ st.markdown("""
     /* Selected button styling */
     div.stButton > button:focus {
         background-color: #2F76B9;
-        border-bottom: 2px solid #2F76B9;
+        border-bottom: 2px solid #F5F5F5;
         font-weight: bold;
     }
     
