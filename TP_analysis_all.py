@@ -541,7 +541,7 @@ elif st.session_state.page == "HM actions":
     x="DATE_GROUP", y="PERCENTAGE", 
     color="FOLDER_TO_TITLE", text="TEXT_LABEL",
     title="Percentage of actions BY Manager",
-    labels={"MONTHLY_": "Time", "PERCENTAGE": "Percentage", "FOLDER_TO_TITLE": "Actions"} 
+    labels={"DATE_GROUP": "Time", "PERCENTAGE": "Percentage", "FOLDER_TO_TITLE": "Actions"} 
     #category_orders={"MONTHLY_": sorted(df3_actions["MONTHLY_"].unique())}  
     )
     fig3.update_layout(barmode="stack", yaxis=dict(tickformat=".0%"), height=500)
