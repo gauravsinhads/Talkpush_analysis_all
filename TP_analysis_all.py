@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import re
+import numpy as np
 
 # Set page config
 st.set_page_config(page_title="iQor Talkpush Dashboard", layout="wide" )
@@ -55,7 +57,7 @@ st.sidebar.title("Pages")
 def set_page(page_name):
     st.session_state.page = page_name
 
-pages = ["Home", "Candidate Info", "Talkscore Analysis", "Failure Reasons", "CEFR Dive"]
+pages = ["Home", "Candidate Info", "Talkscore Analysis", "Failure Reasons", "CEFR Dive","HM actions"]
 
 for page in pages:
     st.sidebar.button(
@@ -71,7 +73,7 @@ if st.session_state.page == "Home":
 
     # bar dropdown
     col = st.columns(3)
-    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days"])
+    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days","HM actions"])
     today = pd.Timestamp.today() # Get today's date
     # Load data
     @st.cache_data
@@ -474,4 +476,102 @@ elif st.session_state.page == "CEFR Dive":
     st.subheader("Talkscore Overall Summary by CEFR (Min–Max)")
     st.dataframe(cefr_summary_pivot)
 
+#____________________________________________________________________________________________________________________________________
+elif st.session_state.page == "HM actions":
+    st.title("HM actions")
+
+    col = st.columns(3)
+    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days"])
+    today = pd.Timestamp.today() # Get today's date
+    # Load data
+    @st.cache_data
+    def load_data(): return pd.read_csv("Folder_Logs.csv")
+    df = load_data()
+    
+    df["DATE_DAY"] = pd.to_datetime(df["DATE_DAY"])
+    
+    # Apply Aggregation based on Selection
+    if aggregation_option == "Last 12 Months":
+        df["DATE_GROUP"] = df["DATE_DAY"].dt.to_period('M').dt.to_timestamp()  # Format as Feb-2024
+    elif  aggregation_option == "Last 12 Weeks":
+        df["DATE_GROUP"] = df["DATE_DAY"] + pd.to_timedelta(6 - df["DATE_DAY"].dt.weekday, unit="D")
+    else:
+        df["DATE_GROUP"] = pd.to_datetime(df["DATE_DAY"], format='%b-%d-%Y')
+    # Apply Aggregation based on Selection2
+    if aggregation_option == "Last 30 days":
+        df = df[df["DATE_DAY"] >= today - pd.Timedelta(days=30)]
+    elif  aggregation_option == "Last 12 Weeks":
+        df = df[df["DATE_DAY"] >= today - pd.Timedelta(weeks=12)]
+    else:
+        df["DATE_GROUP2"] = pd.to_datetime(df["DATE_DAY"], format='%b-%d-%Y')
+
+    df_f = df[df["MOVED_BY"] == "Manager" ]    
+
+    # Group by month,and weeky
+    df_rej = df.groupby(["DATE_GROUP"], as_index=False)[['REJECTED_BY_MANAGER', 'MOVED_BY_MANAGER']].sum()
+    # Calculate rejection percentage
+    df_rej['REJECT_PERCENT'] = (df_rej['REJECTED_BY_MANAGER'] / df_rej['MOVED_BY_MANAGER']) * 100
+    #Create column with text type
+    df_rej["TEXT_LABEL"] = df_rej["REJECT_PERCENT"].apply(lambda x: f"{x:.2f}%")
+    # creation of the plot
+    fig1 = px.line(df_rej, 
+               x="DATE_GROUP", 
+               y="REJECT_PERCENT",
+               markers=True,  # Add points (vertices)
+               title="Reject % Over the time",
+               labels={"DATE_GROUP": "Time", "REJECT_PERCENT": "Rejection %"},
+               line_shape="linear", 
+               text="TEXT_LABEL")  # Use formatted text
+        # Update the trace to display the text on the chart
+    fig1.update_traces( textposition="top center", fill='tozeroy' , fillcolor="rgba(0, 0, 255, 0.2)")
+
+    st.plotly_chart(fig1, use_container_width=True)
+
+    #FIG 3 
+    
+    #FIG 3# Normalize the counts per month to percentages
+    df3_actions = df_f.groupby(["DATE_GROUP", "FOLDER_TO_TITLE"]).size().reset_index(name="COUNT")
+            # Normalize to get percentage per month
+    df3_actions["PERCENTAGE"] = df3_actions.groupby("DATE_GROUP")["COUNT"].transform(lambda x: x / x.sum() * 100)
+    df3_actions["TEXT_LABEL"] = df3_actions["PERCENTAGE"].apply(lambda x: f"{x:.2f}%")
+
+
+
+    fig3 = px.bar(df3_actions, 
+    x="DATE_GROUP", y="PERCENTAGE", 
+    color="FOLDER_TO_TITLE", text="TEXT_LABEL",
+    title="Percentage of actions BY Manager",
+    labels={"MONTHLY_": "Time", "PERCENTAGE": "Percentage", "FOLDER_TO_TITLE": "Actions"} 
+    #category_orders={"MONTHLY_": sorted(df3_actions["MONTHLY_"].unique())}  
+    )
+    fig3.update_layout(barmode="stack", yaxis=dict(tickformat=".0%"), height=500)
+
+    st.plotly_chart(fig3, use_container_width=True)
+
+    #TABLE
+    # Step 1: Clean the MOVER_EMAIL column
+    def clean_email(email):
+        if pd.isna(email) or not isinstance(email, str):
+            return email  # Return as-is if it's NaN or not a string
+        return re.sub(r'\+.*?@', '@', email)  # Remove everything between + and @
+
+    # Convert MOVER_EMAIL to string type first (NaN will become 'nan')
+    df['CLEANED_MOVER_EMAIL'] = df['MOVER_EMAIL'].astype(str).apply(clean_email)
+
+    # Replace 'nan' with actual NaN if needed
+    df['CLEANED_MOVER_EMAIL'] = df['CLEANED_MOVER_EMAIL'].replace('nan', np.nan)
+
+    # Step 2: Group by cleaned MOVER_EMAIL (filter out NaN values if needed)
+    df_mover = df.groupby('CLEANED_MOVER_EMAIL')[['REJECTED_BY_MANAGER', 'MOVED_BY_MANAGER']].sum()
+
+    # Step 3: Calculate rejection percentage
+    df_mover['REJECT_PERCENT'] = (df_mover['REJECTED_BY_MANAGER'] / df_mover['MOVED_BY_MANAGER']) * 100
+    df_mover["REJECT %"] = df_mover["REJECT_PERCENT"].apply(lambda x: f"{x:.2f}%")
+    df_mover = df_mover.sort_values(by='REJECTED_BY_MANAGER', ascending=False)
+    df_mover = df_mover.reset_index()
+    df_mover = df_mover.drop(columns=['REJECT_PERCENT'])
+
+    # Show the table
+    st.subheader("Rejection % By Manager")
+    st.dataframe(df_mover, use_container_width=True)
 # streamlit run TP_analysis_all.py
