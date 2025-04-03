@@ -258,9 +258,9 @@ elif st.session_state.page == "Candidate Info":
         date_freq = 'M'
     
     # Graph 1: Lead Count Trend
-    lead_trend = filtered_data.resample(date_freq, on='INVITATIONDT').count()
-    fig1 = px.line(lead_trend, x=lead_trend.index, y='RECORDID', title='Lead Count Trend', labels={'RECORDID': 'Counts'}, color_discrete_sequence=[colors[0]])
-    st.plotly_chart(fig1, use_container_width=True)
+    #lead_trend = filtered_data.resample(date_freq, on='INVITATIONDT').count()
+    #fig1 = px.line(lead_trend, x=lead_trend.index, y='RECORDID', title='Lead Count Trend', labels={'RECORDID': 'Counts'}, color_discrete_sequence=[colors[0]])
+    #st.plotly_chart(fig1, use_container_width=True)
     
     # Graph 2: Top 10 Campaign Titles
     top_campaigns = filtered_data['CAMPAIGNTITLE'].value_counts().nlargest(10)
