@@ -73,7 +73,7 @@ if st.session_state.page == "Home":
 
     # bar dropdown
     col = st.columns(3)
-    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days","HM actions"])
+    with col[2]: aggregation_option = st.selectbox("Time Period", [ "Last 12 Months","Last 12 Weeks","Last 30 days"])
     today = pd.Timestamp.today() # Get today's date
     # Load data
     @st.cache_data
